@@ -221,8 +221,163 @@ async function run() {
     return `IP 203.0.113.42 bannie sur le WAF & Certificats Vault renouvelés (${rotateData.vault.lastRotation})`;
   });
 
+  // 11. Authentification : refus des identifiants invalides
+  await test('11. Auth - rejet des mauvais identifiants (401)', async () => {
+    const badPwd = await fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'mohammed@corp.sentinel', password: 'mauvais-mot-de-passe' })
+    });
+    if (badPwd.status !== 401) throw new Error(`Mauvais mot de passe: attendu 401, reçu ${badPwd.status}`);
+
+    const unknown = await fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'inconnu@corp.sentinel', password: 'dev123' })
+    });
+    if (unknown.status !== 401) throw new Error(`Email inconnu: attendu 401, reçu ${unknown.status}`);
+
+    const missing = await fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'mohammed@corp.sentinel' })
+    });
+    if (missing.status !== 400) throw new Error(`Mot de passe absent: attendu 400, reçu ${missing.status}`);
+
+    return 'Mauvais mot de passe → 401, email inconnu → 401, champ manquant → 400';
+  });
+
+  // 12. Inscription : doublon d'email refusé
+  await test('12. Auth - inscription avec email déjà utilisé (409)', async () => {
+    const res = await fetch(`${BASE}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Doublon Mohammed',
+        email: 'MOHAMMED@corp.sentinel',
+        password: 'password123',
+        roleId: 'dev'
+      })
+    });
+    if (res.status !== 409) throw new Error(`Attendu 409, reçu ${res.status}`);
+    return 'Doublon refusé (409), insensible à la casse de l’email';
+  });
+
+  // 13. Cycle de vie d'un compte : création, désactivation, refus de connexion, suppression
+  await test('13. Admin - désactivation d\'un compte et refus de connexion (403)', async () => {
+    const email = `disable.me.${Date.now()}@corp.sentinel`;
+    const createRes = await fetch(`${BASE}/api/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Compte Temporaire', email, roleId: 'qa', password: 'Temp#12345' })
+    });
+    const created = await createRes.json();
+    if (!created.id) throw new Error('Création du compte échouée');
+    if ('password' in created) throw new Error('Le mot de passe ne doit jamais être renvoyé par l’API');
+
+    const okLogin = await fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'Temp#12345' })
+    });
+    if (okLogin.status !== 200) throw new Error(`Connexion avant désactivation: attendu 200, reçu ${okLogin.status}`);
+
+    const patchRes = await fetch(`${BASE}/api/users/${created.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: false })
+    });
+    const patched = await patchRes.json();
+    if (patched.active !== false) throw new Error('Le compte n’a pas été désactivé');
+
+    const blockedLogin = await fetch(`${BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'Temp#12345' })
+    });
+    if (blockedLogin.status !== 403) throw new Error(`Connexion après désactivation: attendu 403, reçu ${blockedLogin.status}`);
+
+    // Nettoyage
+    const delRes = await fetch(`${BASE}/api/users/${created.id}`, { method: 'DELETE' });
+    const del = await delRes.json();
+    if (!del.success) throw new Error('Suppression du compte de test échouée');
+
+    return `Compte ${created.id} : connexion 200 → désactivé → 403 → supprimé`;
+  });
+
+  // 14. RBAC : bascule d'une permission puis retour à l'état initial
+  await test('14. RBAC - bascule d\'une permission de rôle (aller-retour)', async () => {
+    const PERM = 'view_audit_trail';
+    const getRole = async () => {
+      const r = await fetch(`${BASE}/api/roles`);
+      const roles = await r.json();
+      return roles.dev;
+    };
+
+    const before = await getRole();
+    if (!before || !Array.isArray(before.permissions)) throw new Error('Rôle "dev" introuvable');
+    const hadPerm = before.permissions.includes(PERM);
+
+    const toggle = () => fetch(`${BASE}/api/roles/dev/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissionKey: PERM })
+    }).then(r => r.json());
+
+    const afterFirst = await toggle();
+    if (afterFirst.permissions.includes(PERM) === hadPerm) throw new Error('La permission n’a pas basculé');
+
+    const afterSecond = await toggle();
+    if (afterSecond.permissions.includes(PERM) !== hadPerm) throw new Error('La permission n’est pas revenue à son état initial');
+
+    const unknown = await fetch(`${BASE}/api/roles/inexistant/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissionKey: PERM })
+    });
+    if (unknown.status !== 404) throw new Error(`Rôle inexistant: attendu 404, reçu ${unknown.status}`);
+
+    return `Permission ${PERM} sur "dev" : ${hadPerm ? 'retirée puis rétablie' : 'ajoutée puis retirée'}, rôle inconnu → 404`;
+  });
+
+  // 15. Piste d'audit : une modification de la matrice RBAC est journalisée
+  await test('15. Audit - journalisation d\'une modification de permissions', async () => {
+    const roles = await (await fetch(`${BASE}/api/roles`)).json();
+    const currentPerms = roles.qa.permissions;
+
+    const badRes = await fetch(`${BASE}/api/roles/qa/permissions`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissions: 'pas-un-tableau' })
+    });
+    if (badRes.status !== 400) throw new Error(`Payload invalide: attendu 400, reçu ${badRes.status}`);
+
+    const logsBefore = await (await fetch(`${BASE}/api/audit-logs`)).json();
+
+    const patchRes = await fetch(`${BASE}/api/roles/qa/permissions`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissions: currentPerms })
+    });
+    if (patchRes.status !== 200) throw new Error(`Mise à jour des permissions: attendu 200, reçu ${patchRes.status}`);
+
+    const logsAfter = await (await fetch(`${BASE}/api/audit-logs`)).json();
+    if (logsAfter.length !== logsBefore.length + 1) {
+      throw new Error(`Une entrée d’audit était attendue (avant: ${logsBefore.length}, après: ${logsAfter.length})`);
+    }
+    const last = logsAfter[0];
+    if (last.category !== 'rbac') throw new Error(`Catégorie attendue "rbac", reçue "${last.category}"`);
+    if (!/QA/i.test(last.action)) throw new Error('L’entrée d’audit ne mentionne pas le rôle modifié');
+
+    return `Entrée d’audit créée : [${last.category}/${last.status}] ${last.action}`;
+  });
+
   console.log('\n======================================================');
-  console.log('✅ TOUTES LES VÉRIFICATIONS SONT PASSÉES AVEC SUCCÈS !');
+  if (process.exitCode) {
+    console.log('❌ AU MOINS UNE VÉRIFICATION A ÉCHOUÉ (voir ci-dessus).');
+  } else {
+    console.log('✅ TOUTES LES VÉRIFICATIONS SONT PASSÉES AVEC SUCCÈS !');
+  }
   console.log('======================================================\n');
 }
 
