@@ -46,7 +46,7 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
     '194.26.29.112 (Brute force OAuth2)',
   ]);
 
-  const vulnerabilities = [
+  const [vulnerabilitiesList, setVulnerabilitiesList] = useState([
     {
       cveId: 'CVE-2024-41110',
       severity: 'CRITIQUE',
@@ -55,6 +55,7 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
       service: `${project.name} Microservices`,
       description: `Contournement du plugin d’autorisation sur les conteneurs hébergeant ${project.name}.`,
       status: 'Correctif disponible',
+      suggestedPR: 'fix(security): pin docker base to 26.1.5-alpine and enforce auth hooks',
     },
     {
       cveId: 'CVE-2024-38816',
@@ -64,6 +65,7 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
       service: `${project.name} Ingress Gateway`,
       description: `Path Traversal sur le traitement des requêtes non vérifiées ciblant ${project.name}.`,
       status: 'Atténuation WAF active',
+      suggestedPR: 'fix(routing): sanitize req.url parameters with regex guard',
     },
     {
       cveId: 'CVE-2024-21538',
@@ -73,8 +75,9 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
       service: 'build-scripts',
       description: 'ReDoS possible lors du parsing de commandes contenant des caractères d’échappement.',
       status: 'PR de mise à jour ouverte',
+      suggestedPR: 'chore(deps): upgrade cross-spawn to ^7.0.6',
     },
-  ];
+  ]);
 
   // Sync security stats with live backend
   React.useEffect(() => {
@@ -85,15 +88,24 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
     }).catch(() => {});
   }, []);
 
-  const handleRunScan = () => {
+  const handleRunScan = async () => {
     setIsScanning(true);
     setScanComplete(false);
-    setTimeout(() => {
+    try {
+      const data = await api.security.scanProject(project.name, project.files);
+      if (data && Array.isArray(data.vulnerabilities) && data.vulnerabilities.length > 0) {
+        setVulnerabilitiesList(data.vulnerabilities);
+        triggerToast(`Scan Trivy terminé : ${data.vulnerabilities.length} failles analysées sur ${project.name} (CVSS Max ${data.cvssMax || '9.8'})`, 'success');
+        addAuditLog(`Scan Trivy & SAST exécuté sur [${project.name}] (${data.vulnerabilities.length} vulnérabilités)`, 'security', 'warning');
+      } else {
+        triggerToast(`Scan de sécurité terminé : aucune nouvelle faille critique sur ${project.name}`, 'success');
+      }
+    } catch {
+      triggerToast('Erreur lors du scan de sécurité', 'warning');
+    } finally {
       setIsScanning(false);
       setScanComplete(true);
-      triggerToast('Scan de conteneurs Trivy terminé : 0 nouvelle faille critique détectée', 'success');
-      addAuditLog('Scan automatisé de sécurité Trivy exécuté sur les clusters de prod', 'security', 'success');
-    }, 1500);
+    }
   };
 
   const handleRotateVault = () => {
@@ -228,7 +240,7 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
             </div>
 
             <div className="space-y-3.5">
-              {vulnerabilities.map((v) => (
+              {vulnerabilitiesList.map((v) => (
                 <div
                   key={v.cveId}
                   className="p-4 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-amber-500/30 transition-all space-y-2.5"
@@ -248,6 +260,21 @@ export const SecRoleView: React.FC<SecRoleViewProps> = ({
                   <p className="text-xs text-zinc-300 font-sans leading-relaxed">
                     {v.description}
                   </p>
+
+                  {v.suggestedPR && (
+                    <div className="p-2 rounded bg-black/40 border border-amber-500/20 text-[10px] font-mono text-amber-300/90 flex items-center justify-between gap-2">
+                      <span className="truncate">PR: {v.suggestedPR}</span>
+                      <button
+                        onClick={() => {
+                          triggerToast(`PR suggérée [${v.suggestedPR}] transmise au cockpit Dev !`, 'success');
+                          addAuditLog(`Proposition de PR de sécurité pour ${v.cveId}`, 'security', 'success');
+                        }}
+                        className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold shrink-0 cursor-pointer"
+                      >
+                        Créer PR
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between text-[11px] font-mono pt-2 border-t border-white/5">
                     <span className="text-zinc-500">{v.component}</span>

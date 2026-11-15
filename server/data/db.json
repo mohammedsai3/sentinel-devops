@@ -77,6 +77,32 @@
       "roleId": "qa",
       "department": "Test Automation",
       "avatarColor": "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+    },
+    {
+      "id": "u-1794760987568",
+      "active": true,
+      "mfaActive": true,
+      "ssoProvider": "Sentinel IAM",
+      "createdAt": "2026-11-15T16:43:07.568Z",
+      "name": "Alexandre QA",
+      "email": "test.user.1794760987564@corp.sentinel",
+      "password": "password123",
+      "roleId": "qa",
+      "department": "Test Automation",
+      "avatarColor": "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+    },
+    {
+      "id": "u-1794761066026",
+      "active": true,
+      "mfaActive": true,
+      "ssoProvider": "Sentinel IAM",
+      "createdAt": "2026-11-15T16:44:26.026Z",
+      "name": "Alexandre QA",
+      "email": "test.user.1794761066020@corp.sentinel",
+      "password": "password123",
+      "roleId": "qa",
+      "department": "Test Automation",
+      "avatarColor": "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
     }
   ],
   "roles": {
@@ -153,6 +179,96 @@
     }
   },
   "incidents": [
+    {
+      "id": "#692",
+      "status": "investigating",
+      "rcaReady": true,
+      "team": "Qualité Logicielle & Chaos",
+      "slaMinutesRemaining": 15,
+      "reportedAt": "17:44 UTC",
+      "title": "[Chaos Engineering] Injection de panne : memory_leak (AbsenceManagementCore)",
+      "service": "absencemanagementcore",
+      "cluster": "k8s-prod-eu1",
+      "priority": "P1",
+      "assignee": "Aymane (Lead QA)",
+      "rcaSummary": "Panne synthétique Chaos injectée pour valider la redondance et les circuits-breakers. Description : Saturation Heap V8 sur AbsenceService",
+      "description": "Injection planifiée : Saturation Heap V8 sur AbsenceService. Vérification automatique de bascule (failover) en cours.",
+      "category": "Chaos & Résilience"
+    },
+    {
+      "id": "#958",
+      "status": "resolved",
+      "rcaReady": false,
+      "team": "Core Backend",
+      "slaMinutesRemaining": 60,
+      "reportedAt": "17:44 UTC",
+      "title": "Crash passerelle de paiement Stripe v3 (Test E2E)",
+      "service": "stripe-gateway",
+      "cluster": "k8s-prod-eu1",
+      "priority": "P1",
+      "category": "Paiements",
+      "description": "Test dynamique de création de panne.",
+      "assignee": "Alexandre QA"
+    },
+    {
+      "id": "#676",
+      "status": "investigating",
+      "rcaReady": true,
+      "team": "Qualité Logicielle & Chaos",
+      "slaMinutesRemaining": 15,
+      "reportedAt": "17:43 UTC",
+      "title": "[Chaos Engineering] Injection de panne : memory_leak (AbsenceManagementCore)",
+      "service": "absencemanagementcore",
+      "cluster": "k8s-prod-eu1",
+      "priority": "P1",
+      "assignee": "Aymane (Lead QA)",
+      "rcaSummary": "Panne synthétique Chaos injectée pour valider la redondance et les circuits-breakers. Description : Saturation Heap V8 sur AbsenceService",
+      "description": "Injection planifiée : Saturation Heap V8 sur AbsenceService. Vérification automatique de bascule (failover) en cours.",
+      "category": "Chaos & Résilience"
+    },
+    {
+      "id": "#562",
+      "status": "resolved",
+      "rcaReady": false,
+      "team": "Core Backend",
+      "slaMinutesRemaining": 60,
+      "reportedAt": "17:43 UTC",
+      "title": "Crash passerelle de paiement Stripe v3 (Test E2E)",
+      "service": "stripe-gateway",
+      "cluster": "k8s-prod-eu1",
+      "priority": "P1",
+      "category": "Paiements",
+      "description": "Test dynamique de création de panne.",
+      "assignee": "Alexandre QA"
+    },
+    {
+      "id": "#379",
+      "status": "open",
+      "rcaReady": false,
+      "team": "Core Backend",
+      "slaMinutesRemaining": 60,
+      "reportedAt": "17:10 UTC",
+      "author": "Vous (Ingénieur de garde)",
+      "role": "DevOps / SRE",
+      "avatarColor": "bg-blue-500/20 text-blue-300",
+      "content": "hi"
+    },
+    {
+      "id": "#617",
+      "status": "open",
+      "rcaReady": true,
+      "team": "Développeur Core",
+      "slaMinutesRemaining": 15,
+      "reportedAt": "16:07 UTC",
+      "title": "[Audit Projet] Test vide sans assertions",
+      "service": "absencemanagementapplicationtests",
+      "cluster": "external-audit",
+      "priority": "P1",
+      "assignee": "Mohammed",
+      "rcaSummary": "Diagnostic automatique Groq LPU pour [Audit Projet] Test vide sans assertions",
+      "description": "Le test ne vérifie aucune condition, il ne détecte donc pas les erreurs de démarrage de l'application.",
+      "category": "Audit & Vulnérabilité"
+    },
     {
       "id": "#116",
       "status": "resolved",
@@ -322,9 +438,150 @@
         "content": "```bash\n# 1️⃣  Get the pod name (pick the one that crashed)\nkubectl get pods -n payments -l app=stripe-gateway -o wide\n\n# 2️⃣  Tail the logs of the crashing pod (replace <POD_NAME> with the real name)\nkubectl logs -n payments <POD_NAME> -f\n\n# 3️⃣  If the pod has multiple containers, specify the one that handles the gateway\nkubectl logs -n payments <POD_NAME> -c gateway -f\n```\n\n*Replace `payments` with the actual namespace if different.*",
         "isAi": true
       }
+    ],
+    "#562": [
+      {
+        "id": "m-1794760987645",
+        "timestamp": "17:43:07",
+        "author": "Alexandre QA",
+        "role": "QA Lead",
+        "avatarColor": "bg-blue-500/20 text-blue-300",
+        "content": "@copilot donne une commande kubectl pour vérifier les logs du pod",
+        "isAi": false
+      },
+      {
+        "id": "m-1794760988653",
+        "timestamp": "17:43:08",
+        "author": "Copilote Groq (openai/gpt-oss-20b)",
+        "role": "IA Assistante SRE",
+        "avatarColor": "bg-teal-500/20 text-teal-300",
+        "content": "```bash\n# 1️⃣  Récupérer le pod en cours (ou le dernier qui a crashé)\nkubectl get pods -n <NAMESPACE> -l app=stripe-gateway -o wide\n\n# 2️⃣  Afficher les logs du pod (en suivant en temps réel)\nkubectl logs -n <NAMESPACE> <POD_NAME> -f\n\n# 3️⃣  Si le pod a crashé et que vous voulez voir les logs de la précédente instance\nkubectl logs -n <NAMESPACE> <POD_NAME> -p\n```\n\n> Remplacez `<NAMESPACE>` par le namespace où tourne `stripe-gateway` (ex. `payments`, `core-backend`, etc.) et `<POD_NAME>` par le nom exact du pod affiché à l’étape 1.  \n>  \n> **Astuce** :  \n> - `-l app=stripe-gateway` filtre par label, mais si votre déploiement utilise un autre label, adaptez‑le (`-l component=stripe-gateway`, etc.).  \n> - `-f` (follow) est utile pour surveiller le crash en temps réel.  \n> - `-p` (previous) vous permet de voir les logs de la dernière exécution avant le crash.",
+        "isAi": true
+      }
+    ],
+    "#958": [
+      {
+        "id": "m-1794761066069",
+        "timestamp": "17:44:26",
+        "author": "Alexandre QA",
+        "role": "QA Lead",
+        "avatarColor": "bg-blue-500/20 text-blue-300",
+        "content": "@copilot donne une commande kubectl pour vérifier les logs du pod",
+        "isAi": false
+      },
+      {
+        "id": "m-1794761066867",
+        "timestamp": "17:44:26",
+        "author": "Copilote Groq (openai/gpt-oss-20b)",
+        "role": "IA Assistante SRE",
+        "avatarColor": "bg-teal-500/20 text-teal-300",
+        "content": "```bash\n# 1️⃣  Récupérer le pod en cours (remplacez <namespace> par le namespace réel)\nkubectl -n <namespace> get pods -l app=stripe-gateway -o jsonpath='{.items[0].metadata.name}'\n\n# 2️⃣  Afficher les logs en temps réel\nkubectl -n <namespace> logs -f $(kubectl -n <namespace> get pods -l app=stripe-gateway -o jsonpath='{.items[0].metadata.name}')\n```\n\n> **Astuce** : si vous avez plusieurs réplicas, ajoutez `-l stripe-gateway=active` ou utilisez `--selector` pour filtrer le pod qui a échoué.  \n> Vous pouvez aussi ajouter `--tail=200` pour limiter à 200 lignes initiales.",
+        "isAi": true
+      }
     ]
   },
   "post_mortems": [
+    {
+      "id": "PM-966",
+      "date": "15 novembre 2026",
+      "ticketRef": "#999",
+      "title": "Panne de passerelle Stripe",
+      "service": "payment-api",
+      "durationMinutes": 14,
+      "category": "Paiements",
+      "authorAi": "Groq LPU (1457ms)",
+      "summary": "La panne de la passerelle Stripe a entraîné une interruption de service de 14 minutes sur le service payment‑api. Après un rollback et une augmentation des ressources, le service a été rétabli sans incidents supplémentaires.",
+      "timeline": [
+        {
+          "time": "14:10:00",
+          "event": "Déclenchement alerte",
+          "type": "alert"
+        },
+        {
+          "time": "14:11:00",
+          "event": "Mobilisation War Room",
+          "type": "rca"
+        },
+        {
+          "time": "14:12:30",
+          "event": "Rollback vers la version stable",
+          "type": "action"
+        },
+        {
+          "time": "14:24:00",
+          "event": "Rétablissement nominal",
+          "type": "resolve"
+        }
+      ],
+      "fiveWhys": [
+        "1. Pourquoi la passerelle Stripe a-t-elle échoué ? Parce que la passerelle a renvoyé un code 502 dû à un dépassement de limite de requêtes.",
+        "2. Pourquoi un dépassement de limite de requêtes s’est-il produit ? Parce que le service payment‑api a envoyé un volume de requêtes supérieur à la capacité allouée.",
+        "3. Pourquoi le service payment‑api a-t-il envoyé un volume de requêtes trop élevé ? Parce que la nouvelle version déployée a augmenté la concurrence sans ajuster les limites de ressources.",
+        "4. Pourquoi la concurrence a-t-elle été augmentée sans ajustement des limites ? Parce que l’autoscaler a interprété à tort une hausse de trafic comme un pic de charge.",
+        "5. Pourquoi l’autoscaler a-t-il mal interprété le trafic ? Parce que le seuil de métrique utilisé pour déclencher l’auto‑scaling était trop bas."
+      ],
+      "actionItems": [
+        {
+          "id": "act-1",
+          "text": "Installer un circuit breaker",
+          "done": false,
+          "owner": "@devops"
+        }
+      ]
+    },
+    {
+      "id": "PM-952",
+      "date": "15 novembre 2026",
+      "ticketRef": "#999",
+      "title": "Panne de passerelle Stripe",
+      "service": "payment-api",
+      "durationMinutes": 14,
+      "category": "Paiements",
+      "authorAi": "Groq LPU (1540ms)",
+      "summary": "La passerelle Stripe a subi une panne de 14 minutes, interrompant le service payment‑api. L’incident a été résolu après un rollback et une augmentation des ressources.",
+      "timeline": [
+        {
+          "time": "10:00:00",
+          "event": "Déclenchement alerte",
+          "type": "alert"
+        },
+        {
+          "time": "10:02:00",
+          "event": "Mobilisation War Room",
+          "type": "rca"
+        },
+        {
+          "time": "10:05:00",
+          "event": "Rollback de la configuration",
+          "type": "action"
+        },
+        {
+          "time": "10:07:00",
+          "event": "Augmentation des ressources (scaling)",
+          "type": "action"
+        },
+        {
+          "time": "10:14:00",
+          "event": "Rétablissement nominal",
+          "type": "resolve"
+        }
+      ],
+      "fiveWhys": [
+        "1. Pourquoi la passerelle Stripe a-t-elle échoué ? Parce qu’une mise à jour de configuration a introduit une incompatibilité avec la version actuelle du SDK.",
+        "2. Pourquoi cette incompatibilité n’a-t-elle pas été détectée en pré-production ? Parce que les tests de régression n’ont pas couvert le scénario de montée en charge.",
+        "3. Pourquoi les tests de régression étaient-ils insuffisants ? Parce que le pipeline CI ne déclenchait pas les tests de performance pour les nouvelles dépendances.",
+        "4. Pourquoi le pipeline CI ne déclenchait pas ces tests ? Parce que la règle de déclenchement a été modifiée sans mise à jour de la documentation.",
+        "5. Pourquoi la documentation n’a-t-elle pas été mise à jour ? Parce que le responsable de la documentation n’a pas reçu l’alerte de changement de règle."
+      ],
+      "actionItems": [
+        {
+          "id": "act-1",
+          "text": "Installer un circuit breaker",
+          "done": false,
+          "owner": "@devops"
+        }
+      ]
+    },
     {
       "id": "PM-904",
       "date": "27 octobre 2026",
@@ -551,6 +808,470 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "aud-1794761074232",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Tasnim (Lead SecOps)",
+      "role": "SECOPS",
+      "action": "Scan de sécurité Trivy & SAST exécuté sur le projet [AbsenceManagementCore] (3 alertes)",
+      "category": "security"
+    },
+    {
+      "id": "aud-1794761073167",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Aymane (Lead QA)",
+      "role": "QA",
+      "action": "Injection de panne Chaos [memory_leak] sur le projet [AbsenceManagementCore]",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794761073158",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Aymane (Lead QA)",
+      "role": "QA",
+      "action": "Exécution dynamique des tests Playwright sur [AbsenceManagementCore] (9/10 validés - 90%)",
+      "category": "deploy"
+    },
+    {
+      "id": "aud-1794761071540",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Tasnim (SecOps)",
+      "role": "SECOPS",
+      "action": "Rotation immédiate des secrets OAuth2 et certificats TLS Vault",
+      "category": "security"
+    },
+    {
+      "id": "aud-1794761071533",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Pare-feu WAF",
+      "role": "SECOPS",
+      "action": "Blocage manuel de l’IP source suspecte [203.0.113.42]",
+      "category": "security"
+    },
+    {
+      "id": "aud-1794761071529",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Moteur IA & SRE",
+      "role": "SRE",
+      "action": "Publication du Post-Mortem PM-966 (Panne de passerelle Stripe)",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794761066063",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Ingénieur d’astreinte",
+      "role": "SRE",
+      "action": "Incident #958 passé à l’état [RESOLVED]",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794761066053",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Alexandre QA",
+      "role": "DEVOPS",
+      "action": "Déclaration de l'incident #958 (Crash passerelle de paiement Stripe v3 (Test E2E))",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794761066027",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Alexandre QA",
+      "role": "QA",
+      "action": "Nouvelle inscription enregistrée avec rôle qa",
+      "category": "rbac"
+    },
+    {
+      "id": "aud-1794761066018",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "DEV",
+      "action": "Connexion réussie au cockpit (dev)",
+      "category": "auth"
+    },
+    {
+      "id": "aud-1794760994752",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Tasnim (Lead SecOps)",
+      "role": "SECOPS",
+      "action": "Scan de sécurité Trivy & SAST exécuté sur le projet [AbsenceManagementCore] (3 alertes)",
+      "category": "security"
+    },
+    {
+      "id": "aud-1794760993956",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Aymane (Lead QA)",
+      "role": "QA",
+      "action": "Injection de panne Chaos [memory_leak] sur le projet [AbsenceManagementCore]",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794760993948",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Aymane (Lead QA)",
+      "role": "QA",
+      "action": "Exécution dynamique des tests Playwright sur [AbsenceManagementCore] (4/5 validés - 80%)",
+      "category": "deploy"
+    },
+    {
+      "id": "aud-1794760992675",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Tasnim (SecOps)",
+      "role": "SECOPS",
+      "action": "Rotation immédiate des secrets OAuth2 et certificats TLS Vault",
+      "category": "security"
+    },
+    {
+      "id": "aud-1794760992669",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Pare-feu WAF",
+      "role": "SECOPS",
+      "action": "Blocage manuel de l’IP source suspecte [203.0.113.42]",
+      "category": "security"
+    },
+    {
+      "id": "aud-1794760992662",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Moteur IA & SRE",
+      "role": "SRE",
+      "action": "Publication du Post-Mortem PM-952 (Panne de passerelle Stripe)",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794760987637",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Ingénieur d’astreinte",
+      "role": "SRE",
+      "action": "Incident #562 passé à l’état [RESOLVED]",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794760987628",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Alexandre QA",
+      "role": "DEVOPS",
+      "action": "Déclaration de l'incident #562 (Crash passerelle de paiement Stripe v3 (Test E2E))",
+      "category": "incident"
+    },
+    {
+      "id": "aud-1794760987570",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Alexandre QA",
+      "role": "QA",
+      "action": "Nouvelle inscription enregistrée avec rôle qa",
+      "category": "rbac"
+    },
+    {
+      "id": "aud-1794760987561",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "DEV",
+      "action": "Connexion réussie au cockpit (dev)",
+      "category": "auth"
+    },
+    {
+      "id": "aud-3683",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mourad",
+      "role": "Administrateur SRE / Directeur",
+      "action": "Génération de la note de synthèse stratégique Comex (Hebdomadaire) pour [AbsenceManagementApplicationTests]",
+      "category": "rbac",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1091",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Aymane",
+      "role": "Ingénieur Qualité (QA Lead)",
+      "action": "Bascule sur le profil Administrateur SRE / Directeur",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-5054",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Aymane",
+      "role": "Ingénieur Qualité (QA Lead)",
+      "action": "Analyse prédictive de goulot d’étranglement K6 pour 6500 RPS",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-0198",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Bascule sur le profil Ingénieur Qualité (QA Lead)",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-7788",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Aymane",
+      "role": "Ingénieur Qualité (QA Lead)",
+      "action": "Bascule sur le profil Développeur Core",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-5913",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Bascule sur le profil Ingénieur Qualité (QA Lead)",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-3054",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Aymane",
+      "role": "Ingénieur Qualité (QA Lead)",
+      "action": "Bascule sur le profil Développeur Core",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1794759040912",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Aymane (QA Lead)",
+      "role": "QA",
+      "action": "Exécution de la suite de tests [Chaos Injection: kill-pod]",
+      "category": "deploy"
+    },
+    {
+      "id": "aud-0904",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Aymane",
+      "role": "Ingénieur Qualité (QA Lead)",
+      "action": "Injection de panne Chaos Engineering : Arrêt forcé d’un nœud secondaire Redis Saturn",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1794759035762",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Aymane (QA Lead)",
+      "role": "QA",
+      "action": "Exécution de la suite de tests [Chaos Injection: latency]",
+      "category": "deploy"
+    },
+    {
+      "id": "aud-5756",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Aymane",
+      "role": "Ingénieur Qualité (QA Lead)",
+      "action": "Injection de panne Chaos Engineering : Injection de 500ms de latence sur Ingress API",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-2132",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Tasnim",
+      "role": "Responsable Sécurité (SecOps)",
+      "action": "Bascule sur le profil Ingénieur Qualité (QA Lead)",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1794759030464",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Tasnim (SecOps)",
+      "role": "SECOPS",
+      "action": "Rotation immédiate des secrets OAuth2 et certificats TLS Vault",
+      "category": "security"
+    },
+    {
+      "id": "aud-0459",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Tasnim",
+      "role": "Responsable Sécurité (SecOps)",
+      "action": "Rotation manuelle forcée des certificats Vault OAuth2 et ACME",
+      "category": "security",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-6847",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Bascule sur le profil Responsable Sécurité (SecOps)",
+      "category": "auth",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1794759002052",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Collaborateur",
+      "role": "DEVOPS",
+      "action": "Déclaration de l'incident #379 (undefined)",
+      "category": "incident"
+    },
+    {
+      "id": "aud-4031",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Diagnostic CI/CD Groq pour le build [build-absencemanagementapplicationtests-1048]",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-8682",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Mise à jour du fichier [AbsenceManagementApplicationTests.java] avec le code refactorisé",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-6207",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Optimisation de code par IA Groq sur [AbsenceManagementApplicationTests.java]",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1811",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Optimisation de code par IA Groq sur [AbsenceManagementApplicationTests.java]",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1670",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Mise à jour du fichier [AbsenceManagementApplicationTests.java] avec le code refactorisé",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-7740",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Mise à jour du fichier [AbsenceManagementApplicationTests.java] avec le code refactorisé",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-3435",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Optimisation de code par IA Groq sur [AbsenceManagementApplicationTests.java]",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-0573",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Déploiement du correctif Groq RCA CartService sur staging",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1794758836852",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Mohammed",
+      "role": "DEVOPS",
+      "action": "Déclaration de l'incident #617 ([Audit Projet] Test vide sans assertions)",
+      "category": "incident"
+    },
+    {
+      "id": "aud-6735",
+      "timestamp": "À l’instant",
+      "status": "warning",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Création de l’incident #617 : \"[Audit Projet] Test vide sans assertions\"",
+      "category": "incident",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-8476",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Application du correctif IA [Test vide sans assertions] sur le projet partagé",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-3493",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Mohammed",
+      "role": "Développeur Core",
+      "action": "Audit 360° en temps réel pour le projet [AbsenceManagementApplicationTests]",
+      "category": "deploy",
+      "ipAddress": "10.240.10.42"
+    },
+    {
+      "id": "aud-1794758823490",
+      "timestamp": "À l’instant",
+      "status": "success",
+      "actor": "Auditeur IA Sentinel",
+      "role": "DEVOPS",
+      "action": "Audit 360° complet du projet importé [AbsenceManagementApplicationTests]",
+      "category": "incident"
+    },
     {
       "id": "aud-3532",
       "timestamp": "À l’instant",
@@ -1361,7 +2082,7 @@
     "status": "HEALTHY",
     "activeCerts": 12,
     "expiringWithin30Days": 0,
-    "lastRotation": "2026-10-27T21:05:55.651Z",
+    "lastRotation": "2026-11-15T16:44:31.537Z",
     "wafBlockedIps": [
       "203.0.113.42",
       "194.26.29.12",
@@ -1393,8 +2114,8 @@
     ]
   },
   "qa_tests": {
-    "lastRunId": "qa-run-418",
-    "passed": 142,
+    "lastRunId": "qa-run-0911",
+    "passed": 146,
     "failed": 0,
     "flaky": 1,
     "durationSeconds": 46.2,

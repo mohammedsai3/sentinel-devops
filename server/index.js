@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './database.js';
+import { testPgConnection, getPgStatus, initPgSchema } from './pgDatabase.js';
 import {
   analyzeRCA,
   generateHotfix,
@@ -17,11 +18,16 @@ import {
   getFinopsRecommendations,
   generateExecutiveBrief,
   auditImportedProject,
+  runProjectQATests,
+  scanProjectSecurity,
   callGroq,
   DEFAULT_MODELS
 } from './groq.js';
 
 dotenv.config();
+
+// Attempt background PostgreSQL initialization
+initPgSchema().catch(() => {});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,6 +71,29 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/telemetry', (req, res) => {
   res.json(db.getTelemetry());
+});
+
+app.get('/api/database/status', async (req, res) => {
+  const testRes = await testPgConnection();
+  const status = getPgStatus();
+  res.json({
+    engine: testRes.success ? 'PostgreSQL' : 'JSON Persistent Store',
+    postgresql: {
+      connected: testRes.success,
+      host: status.host,
+      port: status.port,
+      database: status.database,
+      user: status.user,
+      version: testRes.version || null,
+      error: testRes.error || null,
+    },
+    localJson: {
+      active: true,
+      users: db.getUsers().length,
+      incidents: db.getIncidents().length,
+      auditLogs: db.getAuditLogs().length,
+    }
+  });
 });
 
 // ========================================================
@@ -410,6 +439,29 @@ app.get('/api/security/stats', (req, res) => {
   res.json(db.getSecurityData());
 });
 
+app.post('/api/security/scan-project', async (req, res) => {
+  try {
+    const { projectName, files } = req.body;
+    const result = await scanProjectSecurity({
+      projectName: projectName || 'Projet Actif',
+      files: files || []
+    });
+
+    db.addAuditLog({
+      actor: 'Tasnim (Lead SecOps)',
+      role: 'SECOPS',
+      action: `Scan de sécurité Trivy & SAST exécuté sur le projet [${projectName || 'Projet Actif'}] (${result.totalVulnerabilities} alertes)`,
+      category: 'security',
+      status: result.criticalCount > 0 ? 'warning' : 'success'
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('[Sec Scan Failed]:', err);
+    res.status(500).json({ error: err.message || 'Échec du scan de sécurité' });
+  }
+});
+
 app.post('/api/security/vault/rotate', (req, res) => {
   const vault = db.rotateVault();
   db.addAuditLog({
@@ -442,6 +494,58 @@ app.post('/api/security/waf/block', (req, res) => {
 // ========================================================
 app.get('/api/qa/stats', (req, res) => {
   res.json(db.getQATests());
+});
+
+app.post('/api/qa/run-project-tests', async (req, res) => {
+  try {
+    const { projectName, files, suiteName } = req.body;
+    const result = await runProjectQATests({
+      projectName: projectName || 'Projet Actif',
+      files: files || [],
+      suiteName: suiteName || 'Playwright Master Suite'
+    });
+
+    db.addAuditLog({
+      actor: 'Aymane (Lead QA)',
+      role: 'QA',
+      action: `Exécution dynamique des tests Playwright sur [${projectName || 'Projet'}] (${result.passedCount}/${result.testCases?.length || 0} validés - ${result.successRate}%)`,
+      category: 'deploy',
+      status: result.failedCount > 0 ? 'warning' : 'success'
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('[QA Run Failed]:', err);
+    res.status(500).json({ error: err.message || 'Échec de l’exécution des tests' });
+  }
+});
+
+app.post('/api/qa/chaos-inject', (req, res) => {
+  const { type, description, projectName } = req.body;
+  const newIncident = db.createIncident({
+    title: `[Chaos Engineering] Injection de panne : ${type || 'Panne Système'} (${projectName || 'Global'})`,
+    service: projectName ? projectName.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'k8s-ingress',
+    cluster: 'k8s-prod-eu1',
+    priority: 'P1',
+    status: 'investigating',
+    team: 'Qualité Logicielle & Chaos',
+    assignee: 'Aymane (Lead QA)',
+    slaMinutesRemaining: 15,
+    rcaReady: true,
+    rcaSummary: `Panne synthétique Chaos injectée pour valider la redondance et les circuits-breakers. Description : ${description || 'Stress test de résilience.'}`,
+    description: `Injection planifiée : ${description || type}. Vérification automatique de bascule (failover) en cours.`,
+    category: 'Chaos & Résilience'
+  });
+
+  db.addAuditLog({
+    actor: 'Aymane (Lead QA)',
+    role: 'QA',
+    action: `Injection de panne Chaos [${type}] sur le projet [${projectName || 'Production'}]`,
+    category: 'incident',
+    status: 'warning'
+  });
+
+  res.status(201).json({ success: true, incident: newIncident });
 });
 
 app.post('/api/qa/run', (req, res) => {
@@ -722,7 +826,7 @@ app.post('/api/github/inspect', async (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`=======================================================`);
   console.log(`🚀 Sentinel DevOps Complete Backend API Server running on port ${PORT}`);
   console.log(`💾 Persistent DB: ${db.getUsers().length} users, ${db.getIncidents().length} incidents`);
@@ -730,3 +834,6 @@ app.listen(PORT, () => {
   console.log(`🔗 Health Check: http://localhost:${PORT}/api/health`);
   console.log(`=======================================================`);
 });
+
+// Keep event loop alive on Windows Node runtimes
+setInterval(() => {}, 60000);

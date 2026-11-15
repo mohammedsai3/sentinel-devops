@@ -230,6 +230,43 @@ export const WikiPostMortemView: React.FC<WikiPostMortemViewProps> = ({
     api.postMortems.toggleAction(activePm.id, itemId).catch(() => {});
   };
 
+  const handleExportMarkdown = (pm: PostMortem) => {
+    const mdContent = `# Rapport Post-Mortem SRE : ${pm.title}
+**Identifiant :** ${pm.id}
+**Ticket Associé :** ${pm.ticketRef}
+**Service :** ${pm.service} | **Catégorie :** ${pm.category}
+**Date :** ${pm.date} (Durée de résolution : ${pm.durationMinutes} min)
+**Auteur IA :** ${pm.authorAi}
+
+---
+
+## 1. Résumé Exécutif & Impact Métier
+${pm.summary}
+
+## 2. Analyse des Causes Racines (Méthode des 5 Pourquoi)
+${pm.fiveWhys.map((why, idx) => `${idx + 1}. ${why}`).join('\n')}
+
+## 3. Chronologie des Événements
+${pm.timeline.map((t) => `- **${t.time}** : ${t.event}`).join('\n')}
+
+## 4. Plan d'Action Préventif & Tâches Correctives
+${pm.actionItems.map((a) => `- [${a.done ? 'x' : ' '}] **${a.text}** (Propriétaire : ${a.owner})`).join('\n')}
+
+---
+*Généré par la plateforme Sentinel DevOps Governance & Groq LPU*
+`;
+
+    const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Sentinel_PostMortem_${pm.id}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="pt-24 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       
@@ -389,9 +426,7 @@ export const WikiPostMortemView: React.FC<WikiPostMortemViewProps> = ({
                 </button>
 
                 <button
-                  onClick={() => {
-                    alert(`Export Markdown du rapport ${activePm.id} téléchargé.`);
-                  }}
+                  onClick={() => handleExportMarkdown(activePm)}
                   className="p-2 rounded-lg bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                   title="Exporter Markdown"
                 >

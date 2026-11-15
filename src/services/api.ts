@@ -179,6 +179,13 @@ export const api = {
       return fetchJson('/api/security/stats');
     },
 
+    async scanProject(projectName: string, files: any[]): Promise<any> {
+      return fetchJson('/api/security/scan-project', {
+        method: 'POST',
+        body: JSON.stringify({ projectName, files }),
+      });
+    },
+
     async rotateVault(): Promise<any> {
       return fetchJson('/api/security/vault/rotate', { method: 'POST' });
     },
@@ -197,11 +204,32 @@ export const api = {
       return fetchJson('/api/qa/stats');
     },
 
+    async runProjectTests(projectName: string, files: any[], suiteName?: string): Promise<any> {
+      return fetchJson('/api/qa/run-project-tests', {
+        method: 'POST',
+        body: JSON.stringify({ projectName, files, suiteName }),
+      });
+    },
+
+    async injectChaos(type: string, description: string, projectName: string): Promise<any> {
+      return fetchJson('/api/qa/chaos-inject', {
+        method: 'POST',
+        body: JSON.stringify({ type, description, projectName }),
+      });
+    },
+
     async runSuite(suite: string): Promise<any> {
       return fetchJson('/api/qa/run', {
         method: 'POST',
         body: JSON.stringify({ suite }),
       });
+    },
+  },
+
+  // --- DATABASE ---
+  database: {
+    async getStatus(): Promise<any> {
+      return fetchJson('/api/database/status');
     },
   },
 

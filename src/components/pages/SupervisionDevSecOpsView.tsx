@@ -122,6 +122,13 @@ export const SupervisionDevSecOpsView: React.FC = () => {
     },
   ];
 
+  const [generatedPRToast, setGeneratedPRToast] = useState<string | null>(null);
+
+  const handleCreatePR = (suggestedPR: string, cveId: string) => {
+    setGeneratedPRToast(`PR créée sur la branche fix/${cveId.toLowerCase()} : ${suggestedPR}`);
+    setTimeout(() => setGeneratedPRToast(null), 5000);
+  };
+
   const handleRetryWebhook = (id: string) => {
     setRetryingId(id);
     setTimeout(() => {
@@ -333,9 +340,7 @@ export const SupervisionDevSecOpsView: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => {
-                      alert(`PR générée automatiquement : ${vuln.suggestedPR}`);
-                    }}
+                    onClick={() => handleCreatePR(vuln.suggestedPR, vuln.cveId)}
                     className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-emerald-500 hover:text-zinc-950 text-zinc-200 transition-colors cursor-pointer text-xs flex items-center gap-1.5 shrink-0"
                   >
                     <Sparkle size={13} weight="fill" className="text-emerald-400" />
@@ -345,6 +350,16 @@ export const SupervisionDevSecOpsView: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {generatedPRToast && (
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkle size={15} weight="fill" className="text-emerald-400" />
+                <span>{generatedPRToast}</span>
+              </div>
+              <button onClick={() => setGeneratedPRToast(null)} className="text-zinc-400 hover:text-white">✕</button>
+            </div>
+          )}
         </div>
       )}
 

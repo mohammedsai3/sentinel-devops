@@ -1,7 +1,7 @@
 // Automated End-to-End Verification Test Script
 // Tests Backend API, Database Persistence & Groq AI Engine
 
-const BASE = 'http://localhost:5000';
+const BASE = 'http://127.0.0.1:5000';
 
 async function test(name, fn) {
   process.stdout.write(`Testing: ${name}... `);
@@ -219,6 +219,68 @@ async function run() {
     if (!rotateData.success) throw new Error('Vault rotate failed');
 
     return `IP 203.0.113.42 bannie sur le WAF & Certificats Vault renouvelés (${rotateData.vault.lastRotation})`;
+  });
+
+  // 11. Database Engine Status (PostgreSQL & Relational Integrity)
+  await test('11. Moteur de Base de Données (PostgreSQL / Hybride)', async () => {
+    const res = await fetch(`${BASE}/api/database/status`);
+    const data = await res.json();
+    if (!data.engine) throw new Error('Engine status missing');
+    return `Moteur actif: ${data.engine} | PostgreSQL 18: ${data.postgresql.connected ? 'Connecté' : 'Configuré (fallback local actif)'}`;
+  });
+
+  // 12. Dynamic QA Test Runner (Testing uploaded files)
+  await test('12. Exécution dynamique de Tests QA sur fichiers réels', async () => {
+    const res = await fetch(`${BASE}/api/qa/run-project-tests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectName: 'AbsenceManagementCore',
+        suiteName: 'Contract & Jest Unit Tests',
+        files: [
+          { name: 'AbsenceService.ts', path: 'src/services/AbsenceService.ts' },
+          { name: 'AbsenceController.ts', path: 'src/controllers/AbsenceController.ts' }
+        ]
+      })
+    });
+    const data = await res.json();
+    if (!Array.isArray(data.testCases)) throw new Error('QA testCases missing');
+    return `${data.testCases.length} tests exécutés dynamiquement (${data.passedCount} pass, ${data.failedCount} fail) en ${data.durationMs}ms (Taux: ${data.successRate}%)`;
+  });
+
+  // 13. Chaos Engineering Injection (Incident War Room Creation)
+  await test('13. Injection Chaos Mesh dynamique & création d\'incident SRE', async () => {
+    const res = await fetch(`${BASE}/api/qa/chaos-inject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'memory_leak',
+        description: 'Saturation Heap V8 sur AbsenceService',
+        projectName: 'AbsenceManagementCore'
+      })
+    });
+    const data = await res.json();
+    if (!data.success || !data.incident) throw new Error('Chaos injection failed');
+    return `Incident créé en base : ${data.incident.id} (Titre: "${data.incident.title}")`;
+  });
+
+  // 14. Dynamic Security SAST & Trivy Scan
+  await test('14. Scan de Sécurité SAST / Trivy dynamique sur le projet', async () => {
+    const res = await fetch(`${BASE}/api/security/scan-project`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectName: 'AbsenceManagementCore',
+        files: [
+          { name: 'package.json', path: 'package.json' },
+          { name: 'Dockerfile', path: 'Dockerfile' },
+          { name: 'server.ts', path: 'src/server.ts' }
+        ]
+      })
+    });
+    const data = await res.json();
+    if (!Array.isArray(data.vulnerabilities)) throw new Error('Security vulnerabilities missing');
+    return `${data.vulnerabilities.length} vulnérabilités analysées (${data.criticalCount} critiques, ${data.highCount} élevées) - Score Posture: ${data.postureScore}/100`;
   });
 
   console.log('\n======================================================');

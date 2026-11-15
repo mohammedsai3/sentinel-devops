@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { jsPDF } from 'jspdf';
 import {
   ChartLineUp,
   DownloadSimple,
@@ -18,10 +19,12 @@ import {
   TrendDown,
 } from '@phosphor-icons/react';
 import { ScrollReveal, StaggerGrid, StaggerItem } from '../ScrollReveal';
+import { useRole } from '../../context/RoleContext';
 
 export const ExecutiveReportingView: React.FC<{ onBackToDashboard: () => void }> = ({
   onBackToDashboard,
 }) => {
+  const { project, triggerToast, incidents, auditLogs } = useRole();
   const [period, setPeriod] = useState<'2026-ytd' | 'q3-2026' | 'oct-2026' | '2025'>('2026-ytd');
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
@@ -52,18 +55,114 @@ export const ExecutiveReportingView: React.FC<{ onBackToDashboard: () => void }>
 
   const handleExportPdf = () => {
     setIsExportingPdf(true);
-    setTimeout(() => {
+    try {
+      const doc = new jsPDF();
+      
+      // Header Banner
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, 210, 42, 'F');
+      
+      doc.setTextColor(52, 211, 153); // emerald-400
+      doc.setFontSize(20);
+      doc.text('SENTINEL DEVOPS & SECOPS', 14, 18);
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.text('Rapport Exécutif de Disponibilité & Évolution MTTR', 14, 28);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Projet Actif: ${project?.name || 'express-commerce'} | Date: ${new Date().toLocaleDateString('fr-FR')} | SLA: 99.98%`, 14, 36);
+
+      // Section 1: KPI Summary
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(13);
+      doc.text('1. Indicateurs Stratégiques & Gains Financiers', 14, 54);
+
+      doc.setFontSize(9.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`• MTTR Moyen Actuel : 38m 12s (-38% d'amélioration continue vs début d'année)`, 16, 64);
+      doc.text(`• Disponibilité Globale (SLA) : 99.982% (Objectif contractuel : 99.90%)`, 16, 72);
+      doc.text(`• Incidents Critiques P1 : 18 incidents gérés (100% avec diagnostic Groq LPU)`, 16, 80);
+      doc.text(`• Pertes Financières Évitées : 480 000 € (Retour sur Investissement +320%)`, 16, 88);
+      doc.text(`• Données en temps réel : ${incidents.length} incidents répertoriés | ${auditLogs.length} actions tracées`, 16, 96);
+
+      // Section 2: Historical MTTR Evolution Table
+      doc.setFontSize(13);
+      doc.setTextColor(15, 23, 42);
+      doc.text('2. Historique Mensuel de Résolution MTTR (12 Derniers Mois)', 14, 114);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Mois            MTTR (min)    Incidents P1    Disponibilité SLA    Statut', 16, 124);
+      doc.setDrawColor(226, 232, 240);
+      doc.line(14, 126, 196, 126);
+
+      let yPos = 134;
+      monthlyMttrData.forEach((item) => {
+        const statusLabel = item.mttrMinutes <= 45 ? 'Conforme (<45m)' : 'Sous surveillance';
+        doc.text(`${item.month.padEnd(16, ' ')} ${String(item.mttrMinutes).padStart(4, ' ')} min         ${String(item.p1Count).padStart(2, ' ')}              99.98%               ${statusLabel}`, 16, yPos);
+        yPos += 7;
+      });
+
+      // Section 3: Root Cause Breakdown
+      yPos += 8;
+      doc.setFontSize(13);
+      doc.setTextColor(15, 23, 42);
+      doc.text('3. Répartition des Causes Racines (Analyses Groq LPU)', 14, yPos);
+      yPos += 10;
+
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      rootCauseBreakdown.forEach((rc) => {
+        doc.text(`• ${rc.category} : ${rc.share}% (${rc.count} incidents)`, 16, yPos);
+        yPos += 6.5;
+      });
+
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Document confidentiel certifié par Sentinel DevSecOps Platform - Généré automatiquement pour le Comex.', 14, 285);
+
+      // Trigger actual PDF file download
+      doc.save(`Rapport_Executif_Sentinel_${project?.name || '2026'}.pdf`);
+      triggerToast('Rapport Exécutif Sentinel (PDF) téléchargé avec succès !', 'success');
+    } catch (err: any) {
+      triggerToast('Erreur génération PDF : ' + err.message, 'warning');
+    } finally {
       setIsExportingPdf(false);
-      alert('Rapport Exécutif Sentinel (PDF) généré avec succès pour le Comité de Direction.');
-    }, 1200);
+    }
   };
 
   const handleExportCsv = () => {
     setIsExportingCsv(true);
-    setTimeout(() => {
+    try {
+      const headers = ['Mois', 'MTTR_Minutes', 'Incidents_P1', 'Disponibilite_SLA', 'Pertes_Evitees_EUR'];
+      const rows = monthlyMttrData.map((d) => [
+        d.month,
+        d.mttrMinutes,
+        d.p1Count,
+        '99.98%',
+        d.p1Count * 14200,
+      ]);
+      const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Sentinel_MTTR_Metrics_${project?.name || '2026'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      triggerToast('Export CSV téléchargé avec succès !', 'success');
+    } catch (err: any) {
+      triggerToast('Erreur export CSV : ' + err.message, 'warning');
+    } finally {
       setIsExportingCsv(false);
-      alert('Export CSV des métriques mensuelles 2026 téléchargé.');
-    }, 800);
+    }
   };
 
   return (

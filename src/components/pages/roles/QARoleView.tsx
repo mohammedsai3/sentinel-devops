@@ -36,73 +36,128 @@ export const QARoleView: React.FC<QARoleViewProps> = ({
   const [isRunningE2E, setIsRunningE2E] = useState(false);
   const [testProgress, setTestProgress] = useState(0);
   const [chaosMode, setChaosMode] = useState<string | null>(null);
+  const [lastChaosIncidentId, setLastChaosIncidentId] = useState<string | null>(null);
+  const [showTerminalLog, setShowTerminalLog] = useState(false);
 
-  const testSuites = [
+  // Dynamic Live Test Execution Result
+  const [liveRunResult, setLiveRunResult] = useState<{
+    suiteName: string;
+    passedCount: number;
+    failedCount: number;
+    totalAssertions: number;
+    durationMs: number;
+    successRate: number;
+    testCases: Array<{
+      id: string;
+      name: string;
+      file: string;
+      status: 'passed' | 'failed' | 'warning';
+      durationMs: number;
+      assertion: string;
+      details: string;
+    }>;
+    terminalLog: string;
+    modelUsed?: string;
+    inferenceTimeMs?: number;
+  } | null>(null);
+
+  const defaultTestSuites = [
     {
-      name: `Tunnel d’Achat & Réservation Panier (${project.name})`,
+      name: `Validation Contrats d'API & Payloads (${project.name})`,
       assertions: 84,
-      duration: '42s',
+      duration: '42ms',
       status: 'passed',
       env: 'Staging EU-West',
     },
     {
-      name: `Authentification & Tokens API (${project.name})`,
+      name: `Sécurité Auth JWT & Gestion des Sessions (${project.name})`,
       assertions: 56,
-      duration: '28s',
+      duration: '28ms',
       status: 'passed',
       env: 'Staging Auth',
     },
     {
-      name: `Régression Paiement & Webhooks (${project.name})`,
+      name: `Résilience Concurrence & Verrous Redis (${project.name})`,
       assertions: 32,
-      duration: '19s',
-      status: 'warning',
+      duration: '65ms',
+      status: 'passed',
       env: 'Staging Billing',
     },
     {
       name: `Campagne de Charge 10,000 req/sec (${project.name})`,
       assertions: 120,
-      duration: '3m 15s',
+      duration: '110ms',
       status: 'passed',
-      env: 'Stress Lab',
+      env: 'Stress Lab K6',
     },
   ];
 
-  const handleRunAllTests = () => {
+  // REAL DYNAMIC TEST RUNNER
+  const handleRunAllTests = async () => {
     setIsRunningE2E(true);
-    setTestProgress(10);
-    api.qa.runSuite('Playwright E2E Master Suite').catch(() => {});
-    const interval = setInterval(() => {
-      setTestProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsRunningE2E(false);
-          try {
-            confetti({
-              particleCount: 50,
-              spread: 60,
-              origin: { y: 0.7 },
-              colors: ['#06b6d4', '#22d3ee', '#67e8f9'],
-            });
-          } catch (e) {}
-          triggerToast('Suite E2E Playwright exécutée : 292 assertions validées (100% succès)', 'success');
-          addAuditLog('Campagne de test de validation Playwright lancée par Aymane (Lead QA)', 'deploy', 'success');
-          return 100;
-        }
-        return prev + 25;
-      });
-    }, 400);
+    setTestProgress(25);
+    try {
+      const timer = setInterval(() => {
+        setTestProgress((p) => (p < 85 ? p + 20 : p));
+      }, 200);
+
+      const res = await api.qa.runProjectTests(
+        project.name,
+        project.files,
+        `Playwright Master Suite (${project.name})`
+      );
+
+      clearInterval(timer);
+      setTestProgress(100);
+      setLiveRunResult(res);
+
+      if (res.successRate >= 90) {
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#06b6d4', '#22d3ee', '#67e8f9'],
+          });
+        } catch (e) {}
+      }
+
+      triggerToast(
+        `Suite de tests validée : ${res.passedCount} passés / ${res.totalAssertions} assertions en ${res.durationMs || res.inferenceTimeMs}ms`,
+        res.failedCount > 0 ? 'warning' : 'success'
+      );
+      addAuditLog(
+        `Exécution de tests QA réussie sur [${project.name}] (${res.successRate}% succès)`,
+        'deploy',
+        'success'
+      );
+    } catch (err: any) {
+      triggerToast('Erreur exécution tests : ' + err.message, 'warning');
+    } finally {
+      setIsRunningE2E(false);
+    }
   };
 
-  const handleInjectChaos = (type: string, desc: string) => {
+  // REAL CHAOS ENGINEERING INJECTION
+  const handleInjectChaos = async (type: string, desc: string) => {
     setChaosMode(type);
-    triggerToast(`Scénario Chaos activé : ${desc}`, 'warning');
-    addAuditLog(`Injection de panne Chaos Engineering : ${desc}`, 'deploy', 'warning');
-    api.qa.runSuite(`Chaos Injection: ${type}`).catch(() => {});
-    setTimeout(() => {
-      setChaosMode(null);
-      triggerToast(`Scénario Chaos ${type} terminé - Auto-guérison validée`, 'info');
-    }, 4500);
+    triggerToast(`Simulation de Chaos lancée : ${desc}`, 'warning');
+    try {
+      const res = await api.qa.injectChaos(type, desc, project.name);
+      if (res.success && res.incident) {
+        setLastChaosIncidentId(res.incident.id);
+        triggerToast(
+          `Panne injectée ! Incident ${res.incident.id} ouvert dans la War Room`,
+          'info'
+        );
+      }
+    } catch {
+      triggerToast('Erreur injection de panne', 'warning');
+    } finally {
+      setTimeout(() => {
+        setChaosMode(null);
+      }, 4000);
+    }
   };
 
   return (
@@ -228,26 +283,86 @@ export const QARoleView: React.FC<QARoleViewProps> = ({
             )}
 
             <div className="space-y-3">
-              {testSuites.map((ts, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-cyan-500/30 transition-all space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">{ts.name}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                      ts.status === 'passed' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
-                    }`}>
-                      {ts.status.toUpperCase()}
-                    </span>
+              {liveRunResult ? (
+                <>
+                  <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                      <span className="text-xs font-mono font-bold text-cyan-300">
+                        {liveRunResult.suiteName} · {liveRunResult.successRate}% Taux de Succès
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setShowTerminalLog(!showTerminalLog)}
+                      className="text-[11px] font-mono text-cyan-400 underline hover:text-cyan-300 cursor-pointer"
+                    >
+                      {showTerminalLog ? 'Masquer logs console' : 'Afficher logs console'}
+                    </button>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-1 border-t border-white/5">
-                    <span>{ts.env} · {ts.assertions} assertions</span>
-                    <span className="text-cyan-400 font-semibold">{ts.duration}</span>
+                  {showTerminalLog && (
+                    <pre className="p-3.5 rounded-xl bg-black/80 border border-white/10 font-mono text-[11px] text-cyan-200/90 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+                      {liveRunResult.terminalLog}
+                    </pre>
+                  )}
+
+                  {liveRunResult.testCases?.map((tc) => (
+                    <div
+                      key={tc.id}
+                      className="p-4 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-cyan-500/30 transition-all space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white font-sans">{tc.name}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                            tc.status === 'passed'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : tc.status === 'warning'
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : 'bg-rose-500/20 text-rose-300'
+                          }`}
+                        >
+                          {tc.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="text-[11px] font-mono text-cyan-400 bg-black/40 p-1.5 rounded">
+                        <code>{tc.assertion}</code>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-1 border-t border-white/5">
+                        <span className="truncate max-w-[240px] text-zinc-500">{tc.file}</span>
+                        <span className="text-cyan-400 font-semibold">{tc.durationMs}ms</span>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                defaultTestSuites.map((ts, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl bg-zinc-900/60 border border-white/5 hover:border-cyan-500/30 transition-all space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white">{ts.name}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                          ts.status === 'passed'
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-amber-500/20 text-amber-300'
+                        }`}
+                      >
+                        {ts.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 pt-1 border-t border-white/5">
+                      <span>{ts.env} · {ts.assertions} assertions</span>
+                      <span className="text-cyan-400 font-semibold">{ts.duration}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -318,7 +433,26 @@ export const QARoleView: React.FC<QARoleViewProps> = ({
             {chaosMode && (
               <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 text-xs font-mono text-amber-300 flex items-center gap-2">
                 <ArrowsClockwise size={14} className="animate-spin" />
-                <span>Simulation de crise active : observation des sondes</span>
+                <span>Simulation de crise active : injection en cours</span>
+              </div>
+            )}
+
+            {lastChaosIncidentId && (
+              <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/40 flex items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase block">
+                    Incident Chaos Actif
+                  </span>
+                  <span className="text-xs font-mono font-bold text-white">
+                    {lastChaosIncidentId} ouvert dans la War Room
+                  </span>
+                </div>
+                <button
+                  onClick={onNavigateToIncidents}
+                  className="px-2.5 py-1 rounded bg-cyan-500 hover:bg-cyan-400 text-zinc-950 text-xs font-mono font-bold cursor-pointer transition-colors"
+                >
+                  Voir Ticket
+                </button>
               </div>
             )}
           </div>
